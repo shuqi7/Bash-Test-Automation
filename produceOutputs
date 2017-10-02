@@ -1,0 +1,25 @@
+#！/bin/bash
+
+if [ "$#" -ne 2 ]; then
+        echo "The number of command line arguments is incorrect"
+        exit 1
+else
+        for test in $(cat "$1"); do
+		if [ -f "${test}.in" ]; then
+			if [  -f "${test}.args" ]; then
+                        	"$2" $(cat "${test}.args") < "${test}.in" > "${test}.out"
+                	else
+                        	"$2" < "${test}.in" > "${test}.out"
+			fi
+		else
+			tmpfilein=$(mktemp)
+			echo "" > "${tmpfilein}"
+			if [  -f "${test}.args" ]; then
+                                "$2" $(cat "${test}.args") < "${tmpfilein}" > "${test}.out"
+                        else
+                                "$2" < "${tmpfilein}" > "${test}.out"
+                        fi
+			rm "${tmpfilein}"
+		fi
+        done
+fi

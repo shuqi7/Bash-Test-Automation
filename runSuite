@@ -1,0 +1,69 @@
+#!/bin/bash
+
+if [ "$#" -ne 2 ]; then
+        echo "The Number of Command Line Arguments is incorrect"
+        exit 1
+else
+        for test in $(cat "$1"); do
+                if [ ! -f "${test}.out" ]; then
+                        echo "Error: output file is unavailable"
+                        exit 2
+                elif [ ! -r "${test}.out" ]; then
+                        echo "Error: output file is unreadable"
+                        exit 3
+                elif [ -f "${test}.args" ]; then
+			tmpfile=$(mktemp)
+			if [ -f "${test}.in" ] && [ -r "${test}.in" ]; then
+                        	"$2" $(cat "${test}.args") < "${test}.in" > "${tmpfile}"
+			else	
+				tmpfilein=$(mktemp)
+				echo "" > "${tmpfilein}"
+				"$2" $(cat "${test}.args") < "${tmpfilein}" > "${tmpfile}"
+				rm "${tmpfilein}"
+                        fi
+			diff "${tmpfile}" "${test}.out" > /dev/null
+                        if [ $? -eq 0 ]; then
+                                rm "${tmpfile}"
+                        else
+                                echo "Test failed: ${test}"
+                                echo "Args:"
+                                cat "${test}.args"
+				echo "Input:"
+				if [ -f "${test}.in" ]; then
+					cat "${test}.in"
+				fi
+                                echo "Expected:"
+                                cat "${test}.out"
+                                echo "Actual:"
+                                cat "${tmpfile}"
+                                rm "${tmpfile}"
+                        fi
+                else
+                        tmpfile=$(mktemp)
+			if [ -f "${test}.in" ] && [ -r "${test}.in" ] ; then 
+                        	"$2" < "${test}.in"  > "${tmpfile}"
+			else
+				tmpfilein=$(mktemp)
+				echo "" > "${tmpfilein}"
+				"$2" < "${tmpfilein}" > "${tmpfile}"
+				rm "${tmpfilein}"
+			fi
+                        diff "${tmpfile}" "${test}.out" > /dev/null
+                        if [ $? -eq 0 ]; then
+                                rm "${tmpfile}"
+                        else
+                                echo "Test failed: ${test}"
+                                echo "Args:"
+				echo "Input:"
+				if [ -f "${test}.in" ]; then
+					cat "${test}.in"
+				fi
+                                echo "Expected:"
+                                cat "${test}.out"
+                                echo "Actual:"
+                                cat "${tmpfile}"
+                                rm "${tmpfile}"
+                        fi
+                fi
+        done
+fi
